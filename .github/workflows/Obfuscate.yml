@@ -5,6 +5,7 @@ on:
     branches:
       - main
   schedule:
+    # 每天凌晨1:00运行
     - cron: "0 1 * * *"
 
 permissions:
@@ -13,6 +14,7 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: 检出代码
         uses: actions/checkout@v4
@@ -20,15 +22,17 @@ jobs:
       - name: 设置 Node.js 环境
         uses: actions/setup-node@v4
         with:
-          node-version: "20.x"
+          node-version: "latest"
 
-      - name: 安装依赖项（强制最新版）
-        run: npm install -g javascript-obfuscator@latest  # 关键修复点
+      - name: 安装依赖项
+        run: |
+          npm install -g javascript-obfuscator
 
       - name: 下载 BPB worker.js
-        run: wget -O origin.js https://github.com/bia-pain-bache/BPB-Worker-Panel/releases/download/v3.2.4/worker.js || exit 1
+        run: |
+          wget -O origin.js https://github.com/bia-pain-bache/BPB-Worker-Panel/releases/download/v3.2.4/worker.js
 
-      - name: 混淆 BPB worker.js（兼容性版本）
+      - name: 混淆 BPB worker.js
         run: |
           javascript-obfuscator origin.js --output _worker.js \
             --compact true \
@@ -38,7 +42,6 @@ jobs:
             --rename-globals false \
             --string-array true \
             --string-array-encoding 'rc4' \
-            $(if javascript-obfuscator --help | grep -q '\-\-string-array-seed'; then echo "--string-array-seed 0"; fi) \
             --string-array-threshold 0.75 \
             --transform-object-keys true \
             --unicode-escape-sequence true
@@ -49,3 +52,4 @@ jobs:
           branch: main
           commit_message: ':arrow_up: 更新最新的 BPB 面板'
           commit_author: 'github-actions[bot] <github-actions[bot]@users.noreply.github.com>'
+          push_options: '--set-upstream'
